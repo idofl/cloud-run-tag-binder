@@ -1,0 +1,16 @@
+{
+  "name": "cloud-run-tag-binder",
+  "version": "1.0.0",
+  "description": "Cloud Function function to apply tag value to new Cloud Run services",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx functions-framework --target=cloudRunServiceCreatedEvent --signature-type=cloudevent"
+  },
+  "author": "Google LLC",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.1.2",
+    "@google-cloud/resource-manager": "^4.1.1"
+  }
+}
