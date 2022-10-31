@@ -41,12 +41,12 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --role='roles/iam.serviceAccountTokenCreator'
 
 # Sink to Log bucket
-SINK_LOG_BUCKET=logs-bucket
-SINK_DESTINATION=logging.googleapis.com/projects/$PROJECT_ID/locations/$REGION/buckets/$SINK_LOG_BUCKET
+# SINK_LOG_BUCKET=logs-bucket
+# SINK_DESTINATION=logging.googleapis.com/projects/$PROJECT_ID/locations/$REGION/buckets/$SINK_LOG_BUCKET
 
-gcloud logging buckets create $SINK_LOG_BUCKET \
-  --location=$REGION \
-  --project=$PROJECT_ID
+# gcloud logging buckets create $SINK_LOG_BUCKET \
+#   --location=$REGION \
+#   --project=$PROJECT_ID
 
 # Sink to PubSub
 SINK_TOPIC=cloud-run-logs
@@ -70,27 +70,27 @@ SINK_IDENTITY=`gcloud logging sinks describe $SINK_NAME \
   --format="value(writerIdentity)"`
 
 # If Sink is log bucket
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=$SINK_IDENTITY \
-  --role='roles/logging.bucketWriter' \
-  --condition=expression="resource.name.endsWith('buckets/$SINK_LOG_BUCKET')",title="filter bucket"
+# gcloud projects add-iam-policy-binding $PROJECT_ID \
+#   --member=$SINK_IDENTITY \
+#   --role='roles/logging.bucketWriter' \
+#   --condition=expression="resource.name.endsWith('buckets/$SINK_LOG_BUCKET')",title="filter bucket"
 
-gcloud functions deploy cloud-run-service-tag-binder \
---gen2 \
---runtime=nodejs16 \
---region=$REGION \
---source=. \
---entry-point=cloudRunServiceCreatedEvent \
---set-env-vars TAG_VALUE=$TAG_VALUE \
---run-service-account=$FUNCTION_SERVICE_ACCOUNT \
---trigger-location=$REGION \
---trigger-event-filters="type=google.cloud.audit.log.v1.written" \
---trigger-event-filters="serviceName=run.googleapis.com" \
---trigger-event-filters="methodName=google.cloud.run.v1.Services.CreateService" \
---trigger-service-account=$TRIGGER_SERVICE_ACCOUNT \
---project=$PROJECT_ID \
---quiet #\
-#--set-env-vars DEBUG="true" 
+# gcloud functions deploy cloud-run-service-tag-binder \
+# --gen2 \
+# --runtime=nodejs16 \
+# --region=$REGION \
+# --source=. \
+# --entry-point=cloudRunServiceCreatedEvent \
+# --set-env-vars TAG_VALUE=$TAG_VALUE \
+# --run-service-account=$FUNCTION_SERVICE_ACCOUNT \
+# --trigger-location=$REGION \
+# --trigger-event-filters="type=google.cloud.audit.log.v1.written" \
+# --trigger-event-filters="serviceName=run.googleapis.com" \
+# --trigger-event-filters="methodName=google.cloud.run.v1.Services.CreateService" \
+# --trigger-service-account=$TRIGGER_SERVICE_ACCOUNT \
+# --project=$PROJECT_ID \
+# --quiet #\
+# #--set-env-vars DEBUG="true" 
 
 # If Sink is pubsub
 gcloud pubsub topics add-iam-policy-binding $SINK_TOPIC \
