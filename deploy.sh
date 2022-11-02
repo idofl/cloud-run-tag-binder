@@ -24,13 +24,20 @@ gcloud iam service-accounts create cloud-run-tag-binder \
   --display-name="Service account with permissions to bind tag value to Cloud Run services" \
   --project=$PROJECT_ID
 
+gcloud iam roles create runTagBinder \
+  --organization=$ORG_ID \
+  --title="Cloud Run Tag Binder" \
+  --stage=GA \
+  --description="Have access to create tag bindings for cloud run services" \
+  --permissions=run.services.createTagBinding
+
 gcloud resource-manager tags values add-iam-policy-binding $TAG_VALUE \
   --member="serviceAccount:${FUNCTION_SERVICE_ACCOUNT}" \
   --role='roles/resourcemanager.tagUser'
 
 gcloud organizations add-iam-policy-binding $ORG_ID \
   --member="serviceAccount:${FUNCTION_SERVICE_ACCOUNT}" \
-  --role='roles/run.admin'
+  --role="organizations/$ORG_ID/roles/runTagBinder"
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:${TRIGGER_SERVICE_ACCOUNT}" \
