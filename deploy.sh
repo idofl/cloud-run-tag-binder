@@ -1,14 +1,16 @@
 PROJECT_ID=[FUNCTION_PROJECT_ID]
 FOLDER_ID=[INSPECTED_FOLDER_ID]
 TEST_PROJECT_ID=[TEST_PROJECT_ID]
-TAG_VALUE=tagValues/[TAG_VALUE_ID]
+#TAG_VALUE=tagValues/[TAG_VALUE_ID]
 REGION=[RESOURCE_REGION]
+
+FUNCTION_SERVICE_ACCOUNT=cloud-run-tag-binder@$PROJECT_ID.iam.gserviceaccount.com
+SINK_NAME=cloud-run-create-service-sink
+TAG_NAME=AllowPublicAccess
 
 PROJECT_NUMBER=`gcloud projects describe $PROJECT_ID --format="value(projectNumber)"`
 ORG_ID=`gcloud projects get-ancestors $PROJECT_ID | grep organization | cut -f1 -d' '`
 TRIGGER_SERVICE_ACCOUNT=$PROJECT_NUMBER-compute@developer.gserviceaccount.com
-FUNCTION_SERVICE_ACCOUNT=cloud-run-tag-binder@$PROJECT_ID.iam.gserviceaccount.com
-SINK_NAME=cloud-run-create-service-sink
 
 gcloud services enable \
   cloudresourcemanager.googleapis.com \
@@ -18,7 +20,37 @@ gcloud services enable \
   cloudbuild.googleapis.com \
   pubsub.googleapis.com \
   eventarc.googleapis.com \
+  orgpolicy.googleapis.com \
   --project $PROJECT_ID
+
+gcloud resource-manager tags keys create $TAG_NAME \
+  --parent=organizations/$ORG_ID
+
+gcloud resource-manager tags values create true \
+  --parent=$ORG_ID/$TAG_NAME
+
+TAG_VALUE=`gcloud resource-manager tags values describe $ORG_ID/$TAG_NAME/true \
+  --format="value(name)"`
+
+tee allowPublicAccessPolicy.json <<EOF
+{
+  "name": "folders/$FOLDER_ID/policies/iam.allowedPolicyMemberDomains",
+  "spec": {
+    "inheritFromParent": true,
+    "rules": [
+      {
+        "allowAll": true,
+        "condition": {
+          "expression": "resource.matchTag(\"$ORG_ID/$TAG_NAME\", \"true\")",
+          "title": "allow"
+        }
+      }
+    ]
+  }
+}
+EOF
+
+gcloud org-policies set-policy allowPublicAccessPolicy.json
 
 gcloud iam service-accounts create cloud-run-tag-binder \
   --display-name="Service account with permissions to bind tag value to Cloud Run services" \
