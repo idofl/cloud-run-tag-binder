@@ -24,7 +24,7 @@ SINK_NAME=cloud-run-create-service-sink
 TAG_NAME=AllowPublicAccess
 
 PROJECT_NUMBER=`gcloud projects describe $PROJECT_ID --format="value(projectNumber)"`
-ORG_ID=`gcloud projects get-ancestors $PROJECT_ID | grep organization | cut -f1 -d' '`
+ORG_ID=`gcloud projects get-ancestors $PROJECT_ID --format=json | jq -c '.[] | select(.type=="organization") | .id | tonumber'`
 TRIGGER_SERVICE_ACCOUNT=$PROJECT_NUMBER-compute@developer.gserviceaccount.com
 
 gcloud services enable \
@@ -83,7 +83,7 @@ gcloud resource-manager tags values add-iam-policy-binding $TAG_VALUE \
   --member="serviceAccount:${FUNCTION_SERVICE_ACCOUNT}" \
   --role='roles/resourcemanager.tagUser'
 
-gcloud organizations add-iam-policy-binding $ORG_ID \
+gcloud resource-manager folders add-iam-policy-binding $FOLDER_ID \
   --member="serviceAccount:${FUNCTION_SERVICE_ACCOUNT}" \
   --role="organizations/$ORG_ID/roles/runTagBinder"
 
@@ -166,6 +166,11 @@ gcloud functions deploy cloud-run-service-tag-binder \
 --project=$PROJECT_ID \
 --quiet
 #--set-env-vars DEBUG="true" \
+
+# Adding cloud run invoker role to the $TRIGGER_SERVICE_ACCOUNT
+gcloud functions add-invoker-policy-binding cloud-run-service-tag-binder \
+  --region=$REGION \
+  --member="serviceAccount:${TRIGGER_SERVICE_ACCOUNT}" 
 
 gcloud run deploy hello \
   --image us-docker.pkg.dev/cloudrun/container/hello@sha256:2e70803dbc92a7bffcee3af54b5d264b23a6096f304f00d63b7d1e177e40986c \
