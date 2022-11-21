@@ -31,7 +31,8 @@ gcloud services enable \
   cloudresourcemanager.googleapis.com \
   artifactregistry.googleapis.com \
   cloudfunctions.googleapis.com \
-  run.googleapis.com logging.googleapis.com \
+  run.googleapis.com \
+  logging.googleapis.com \
   cloudbuild.googleapis.com \
   pubsub.googleapis.com \
   eventarc.googleapis.com \
