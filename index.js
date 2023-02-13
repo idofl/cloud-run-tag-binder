@@ -64,15 +64,6 @@ async function callCreateTagBinding(projectId, location, serviceName) {
   debugLog(JSON.stringify(response));
 }
 
-function parseLogCloudEvent(cloudEvent) {
-  // Example structure
-  // https://googleapis.github.io/google-cloudevents/examples/binary/audit/LogEntryData-pubsubCreateTopic.json
-  const payload = cloudEvent.data && cloudEvent.data.resource;
-  let labels = payload && payload.labels;
-
-  return labels;
-}
-
 function parsePubSubCloudEvent(cloudEvent) {
   // Example structure:
   // https://googleapis.github.io/google-cloudevents/examples/binary/pubsub/MessagePublishedData-complex.json
@@ -86,13 +77,10 @@ function parsePubSubCloudEvent(cloudEvent) {
 
 functions.cloudEvent('cloudRunServiceCreatedEvent', async(cloudEvent) => {
   debugLog(JSON.stringify(cloudEvent));
-  
+
   // Extract parameters from the CloudEvent
   // https://cloud.google.com/eventarc/docs/cloudevents#common-events
-  if (cloudEvent.type == 'google.cloud.audit.log.v1.written') {
-    var labels = parseLogCloudEvent(cloudEvent);
-  } 
-  else if (cloudEvent.type == 'google.cloud.pubsub.topic.v1.messagePublished') {
+  if (cloudEvent.type == 'google.cloud.pubsub.topic.v1.messagePublished') {
     var labels = parsePubSubCloudEvent(cloudEvent);
   } else {
     console.error(`Unsupported Eventarc source: ${cloudEvent.type}`);
