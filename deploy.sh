@@ -157,7 +157,7 @@ SERVICE_URL=`gcloud run services describe $RUN_SERVICE_NAME --platform managed -
 gcloud pubsub subscriptions create $RUN_SERVICE_NAME-subscriber \
     --topic $SINK_TOPIC \
     --ack-deadline=600 \
-    --push-endpoint=$SERVICE_URL \
+    --push-endpoint="$SERVICE_URL/projects/$PROJECT_ID/topics/$SINK_TOPIC" \
     --push-auth-service-account=$TRIGGER_SERVICE_ACCOUNT \
     --project=$PROJECT_ID
 
