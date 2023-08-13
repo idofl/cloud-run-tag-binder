@@ -13,4 +13,4 @@
 .git
 .gitignore
 
-src/node_modules
+node_modules
