@@ -18,10 +18,10 @@
 const {TagBindingsClient} = require('@google-cloud/resource-manager');
 const functions = require('@google-cloud/functions-framework');
 
-const LOG_DEBUG = process.env.DEBUG;
+const DEBUG_LOGS = process.env.DEBUG_LOGS;
 
 function debugLog(message) {
-  if (LOG_DEBUG) {console.log(message);}
+  if (DEBUG_LOGS && DEBUG_LOGS.toLowerCase() == "true") {console.log(message);}
 }
 
 async function callCreateTagBinding(projectId, location, serviceName) {
@@ -48,6 +48,8 @@ async function callCreateTagBinding(projectId, location, serviceName) {
   const resourcemanagerClient = new TagBindingsClient(
   {
     apiEndpoint:`${location}-cloudresourcemanager.googleapis.com`,
+    libName: 'cloud-solutions',
+    libVersion: 'tag-public-cloud-run-service-listener-v1.0',
   });
 
   // Run request

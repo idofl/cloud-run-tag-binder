@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PROJECT_ID=[PROJECT_ID]
-REGION=[REGION]
+PROJECT_ID=[FUNCTION_PROJECT_ID]
+REGION=[RESOURCE_REGION]
 ORG_ID=[ORGANIZATION_ID]
-FOLDER_ID=[ROOT_FOLDER_ID]
+FOLDER_ID=[CLOUD_RUN_ROOT_FOLDER_ID_OR_EMPTY]
 
 # Build the infrastructure using Terraform
 # (service accounts, IAM, logging sink, Pub/Sub)
@@ -25,7 +25,7 @@ cd terraform
 
 terraform init
 
-terraform apply \
+terraform apply -auto-approve \
   -var="project_id=$PROJECT_ID" \
   -var="region=$REGION" \
   -var="cloud_run_root_folder=$FOLDER_ID" \
@@ -42,26 +42,28 @@ cd ..
 RUN_SERVICE_NAME=cloud-run-service-tag-binder
 
 # Host the app on Cloud Run
-# For debug messages, add: --set-env-vars DEBUG="true" \
+# To view debug logs, change DEBUG_LOGS value to "true"
 gcloud run deploy $RUN_SERVICE_NAME \
     --region $REGION \
     --project=$PROJECT_ID \
     --set-env-vars TAG_VALUE=$TAG_VALUE \
+    --set-env-vars DEBUG_LOGS="false" \
     --service-account=$FUNCTION_SERVICE_ACCOUNT \
     --quiet \
     --ingress=internal \
     --source src
 
-#Permit the Pub/Sub push subscription to send message to Cloud Run
+# Permit the Pub/Sub push subscription to send message to Cloud Run
 gcloud run services add-iam-policy-binding $RUN_SERVICE_NAME \
     --project=$PROJECT_ID \
     --region=$REGION \
     --member=serviceAccount:$TRIGGER_SERVICE_ACCOUNT \
-    --role=roles/run.invoker
+    --role="roles/run.invoker"
 
 SERVICE_URL=`gcloud run services describe $RUN_SERVICE_NAME --platform managed --region $REGION --project=$PROJECT_ID --format 'value(status.url)'`
 
-#Update the push URL in the Pub/Sub subscriber
+# Change the Pub/Sub subscription from pull to push
 gcloud pubsub subscriptions modify-push-config $SUBSCRIBER_NAME \
     --push-endpoint="$SERVICE_URL/projects/$PROJECT_ID/topics/$SINK_TOPIC" \
+    --push-auth-service-account=$TRIGGER_SERVICE_ACCOUNT \
     --project=$PROJECT_ID

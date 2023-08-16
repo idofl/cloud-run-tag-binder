@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.77.0"
+    }
+  }
+
+  provider_meta "google" {
+    module_name = "cloud-solutions/tag-public-cloud-run-service-deploy-v1.0"
+  }
+}
+
 provider "google" {
   project = var.project_id
   region  = var.region
@@ -213,13 +226,6 @@ resource "google_pubsub_subscription" "example" {
 
   expiration_policy {
     ttl = "" # Never expires
-  }
-
-  push_config {
-    push_endpoint = "https://invalid-address.google.com"
-    oidc_token {
-      service_account_email = google_service_account.trigger_service_account.email
-    }
   }
 }
 
