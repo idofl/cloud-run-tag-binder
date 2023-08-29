@@ -49,7 +49,7 @@ async function callCreateTagBinding(projectId, location, serviceName) {
   {
     apiEndpoint:`${location}-cloudresourcemanager.googleapis.com`,
     libName: 'cloud-solutions',
-    libVersion: 'tag-public-cloud-run-service-listener-v1.0',
+    libVersion: 'cloud-run-tag-public-services-usage-v1.0',
   });
 
   // Run request

@@ -23,7 +23,7 @@ terraform {
   }
 
   provider_meta "google" {
-    module_name = "cloud-solutions/tag-public-cloud-run-service-deploy-v1.0"
+    module_name = "cloud-solutions/cloud-run-tag-public-services-deploy-v1.0"
   }
 }
 
