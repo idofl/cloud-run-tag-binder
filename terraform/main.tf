@@ -78,7 +78,6 @@ locals {
     "logging.googleapis.com",
     "cloudbuild.googleapis.com",
     "pubsub.googleapis.com",
-    "eventarc.googleapis.com",
     "orgpolicy.googleapis.com",
   ]
 
