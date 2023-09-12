@@ -30,7 +30,7 @@ gcloud run services delete $RUN_SERVICE_NAME \
 
 # Remove all the components created by terraform
 cd terraform
-terraform destroy \
+terraform destroy -auto-approve \
   -var="project_id=$PROJECT_ID" \
   -var="region=$REGION" \
   -var="cloud_run_root_folder=$FOLDER_ID" \
