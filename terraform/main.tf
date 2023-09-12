@@ -59,7 +59,7 @@ locals {
   pubsub_subscription_name = "${local.sink_topic}-subscriber"
 
   tag_name = "AllowPublicAccess"
-  tag_value = "true"
+  tag_value = "True"
 
   tag_role_name = "runTagBinder"
   cloud_build_bucket = "${var.project_id}_cloudbuild"
