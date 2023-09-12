@@ -64,11 +64,13 @@ locals {
   cloud_build_bucket = "${var.project_id}_cloudbuild"
 
   org_id = "organizations/${data.google_organization.org.org_id}"
+  folder_id = "folders/${var.cloud_run_root_folder}"
   project_number = data.google_project.project.number
 
   run_service_name = "cloud-run-service-tag-binder"
 
   services = [
+    "iam.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "artifactregistry.googleapis.com",
     "run.googleapis.com",
@@ -114,8 +116,8 @@ resource "google_tags_tag_value" "allow_public_access_value" {
 
 resource "google_org_policy_policy" "drs_org_policy" {
   provider = google.with_billing_project
-  name     = "${var.cloud_run_root_folder != "" ?var.cloud_run_root_folder : local.org_id}/policies/iam.allowedPolicyMemberDomains"
-  parent   = (var.cloud_run_root_folder != "" ? var.cloud_run_root_folder : 
+  name     = "${local.folder_id != "" ?local.folder_id : local.org_id}/policies/iam.allowedPolicyMemberDomains"
+  parent   = (local.folder_id != "" ? local.folder_id : 
               local.org_id)
 
   spec {
@@ -147,14 +149,14 @@ resource "google_tags_tag_value_iam_binding" "tag_value_iam" {
 }
 
 resource "google_folder_iam_binding" "tab_binder_folder_root_iam" {
-  folder = var.cloud_run_root_folder
+  folder = local.folder_id
   role = "${local.org_id}/roles/${local.tag_role_name}"
 
   members = [
     google_service_account.app_service_account.member,
   ]
 
-  count = "${var.cloud_run_root_folder != "" ? 1 : 0}"
+  count = "${local.folder_id != "" ? 1 : 0}"
 }
 
 resource "google_organization_iam_binding" "tab_binder_org_root_iam" {
@@ -165,7 +167,7 @@ resource "google_organization_iam_binding" "tab_binder_org_root_iam" {
     google_service_account.app_service_account.member,
   ]
 
-  count = "${var.cloud_run_root_folder == "" ? 1 : 0}"
+  count = "${local.folder_id == "" ? 1 : 0}"
 }
 
 resource "google_service_account_iam_binding" "pubsub_act_as_trigger_iam" {
@@ -185,11 +187,11 @@ resource "google_logging_folder_sink" "run_logs_sink_root_folder" {
   name = local.sink_name
   description = "Cloud Run Create Service sink"
   include_children = true
-  folder = var.cloud_run_root_folder
+  folder = local.folder_id
   destination = local.sink_destination
   filter = local.log_filter
 
-  count = "${var.cloud_run_root_folder != "" ? 1 : 0}"
+  count = "${local.folder_id != "" ? 1 : 0}"
 }
 
 resource "google_logging_organization_sink" "run_logs_sink_root_org" {
@@ -200,14 +202,14 @@ resource "google_logging_organization_sink" "run_logs_sink_root_org" {
   destination = local.sink_destination
   filter = local.log_filter
 
-  count = "${var.cloud_run_root_folder == "" ? 1 : 0}"
+  count = "${local.folder_id == "" ? 1 : 0}"
 }
 
 resource "google_pubsub_topic_iam_binding" "sink_topic_iam" {
   topic = google_pubsub_topic.sink_topic.name
   role = "roles/pubsub.publisher"
   members = [
-    (var.cloud_run_root_folder != "" ? google_logging_folder_sink.run_logs_sink_root_folder[0].writer_identity : 
+    (local.folder_id != "" ? google_logging_folder_sink.run_logs_sink_root_folder[0].writer_identity : 
       google_logging_organization_sink.run_logs_sink_root_org[0].writer_identity)
   ]
 }
