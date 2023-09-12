@@ -50,7 +50,7 @@ data "google_organization" "org" {
 }
 
 locals {
-  function_service_account_name = "cloud-run-tag-binder"
+  app_service_account_name = "cloud-run-tag-binder"
   trigger_service_account_name = "cloud-run-notifier"
 
   sink_name = "cloud-run-create-service-sink"
@@ -71,7 +71,6 @@ locals {
   services = [
     "cloudresourcemanager.googleapis.com",
     "artifactregistry.googleapis.com",
-    "cloudfunctions.googleapis.com",
     "run.googleapis.com",
     "logging.googleapis.com",
     "cloudbuild.googleapis.com",
@@ -90,10 +89,11 @@ locals {
 resource "google_project_service" "services" {
   for_each = toset(local.services)
   service = each.value
+  disable_on_destroy = false
 }
 
-resource "google_service_account" "function_service_account" {
-  account_id   = local.function_service_account_name
+resource "google_service_account" "app_service_account" {
+  account_id   = local.app_service_account_name
   display_name = "Service account with permissions to bind tag value to Cloud Run services"
 }
 
@@ -123,7 +123,7 @@ resource "google_org_policy_policy" "drs_org_policy" {
     rules {
       allow_all = "TRUE"
       condition {
-        expression = "resource.matchTagId('${google_tags_tag_key.allow_public_access.id}', '${google_tags_tag_value.allow_public_access_value.id}')"
+        expression = "resource.matchTag('${google_tags_tag_key.allow_public_access.namespaced_name}', '${google_tags_tag_value.allow_public_access_value.short_name}')"
         title = "Allow DRS if tag exists"
       }
     }
@@ -142,7 +142,7 @@ resource "google_tags_tag_value_iam_binding" "tag_value_iam" {
   tag_value = google_tags_tag_value.allow_public_access_value.name
   role = "roles/resourcemanager.tagUser"
   members = [
-    google_service_account.function_service_account.member
+    google_service_account.app_service_account.member
   ]
 }
 
@@ -151,7 +151,7 @@ resource "google_folder_iam_binding" "tab_binder_folder_root_iam" {
   role = "${local.org_id}/roles/${local.tag_role_name}"
 
   members = [
-    google_service_account.function_service_account.member,
+    google_service_account.app_service_account.member,
   ]
 
   count = "${var.cloud_run_root_folder != "" ? 1 : 0}"
@@ -162,7 +162,7 @@ resource "google_organization_iam_binding" "tab_binder_org_root_iam" {
   role = "${local.org_id}/roles/${local.tag_role_name}"
 
   members = [
-    google_service_account.function_service_account.member,
+    google_service_account.app_service_account.member,
   ]
 
   count = "${var.cloud_run_root_folder == "" ? 1 : 0}"
@@ -216,6 +216,7 @@ resource "google_storage_bucket" "build_bucket" {
   name          = local.cloud_build_bucket
   location      = var.region
   uniform_bucket_level_access = true
+  force_destroy = true
 }
 
 resource "google_pubsub_subscription" "example" {
@@ -227,14 +228,18 @@ resource "google_pubsub_subscription" "example" {
   expiration_policy {
     ttl = "" # Never expires
   }
+
+  lifecycle {
+    ignore_changes = [push_config]
+  }
 }
 
 output "tag_value" {
   value = google_tags_tag_value.allow_public_access_value.id
 }
 
-output "function_service_account" {
-  value = google_service_account.function_service_account.email
+output "app_service_account" {
+  value = google_service_account.app_service_account.email
 }
 
 output "trigger_service_account" {
