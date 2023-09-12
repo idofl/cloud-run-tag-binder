@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PROJECT_ID=[FUNCTION_PROJECT_ID]
-REGION=[RESOURCE_REGION]
-ORG_ID=[ORGANIZATION_ID]
-FOLDER_ID=[CLOUD_RUN_ROOT_FOLDER_ID_OR_EMPTY]
+# The below variables should be set before calling this script
+#PROJECT_ID=[APP_PROJECT_ID]
+#REGION=[APP_REGION]
+#ORG_ID=[ORGANIZATION_ID]
+#FOLDER_ID=[ROOT_FOLDER_ID]
 
 # Build the infrastructure using Terraform
 # (service accounts, IAM, logging sink, Pub/Sub)
@@ -35,7 +36,7 @@ TAG_VALUE=`terraform output -raw tag_value`
 SINK_TOPIC=`terraform output -raw sink_topic`
 SUBSCRIBER_NAME=`terraform output -raw sink_subscription`
 TRIGGER_SERVICE_ACCOUNT=`terraform output -raw trigger_service_account`
-FUNCTION_SERVICE_ACCOUNT=`terraform output -raw function_service_account`
+APP_SERVICE_ACCOUNT=`terraform output -raw app_service_account`
 
 cd ..
 
@@ -48,7 +49,7 @@ gcloud run deploy $RUN_SERVICE_NAME \
     --project=$PROJECT_ID \
     --set-env-vars TAG_VALUE=$TAG_VALUE \
     --set-env-vars DEBUG_LOGS="false" \
-    --service-account=$FUNCTION_SERVICE_ACCOUNT \
+    --service-account=$APP_SERVICE_ACCOUNT \
     --quiet \
     --ingress=internal \
     --source src
