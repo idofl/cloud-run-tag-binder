@@ -59,6 +59,7 @@ locals {
   pubsub_subscription_name = "${local.sink_topic}-subscriber"
 
   tag_name = "AllowPublicAccess"
+  tag_value = "true"
 
   tag_role_name = "runTagBinder"
   cloud_build_bucket = "${var.project_id}_cloudbuild"
@@ -111,7 +112,7 @@ resource "google_tags_tag_key" "allow_public_access" {
 
 resource "google_tags_tag_value" "allow_public_access_value" {
   parent = "tagKeys/${google_tags_tag_key.allow_public_access.name}"
-  short_name = "true"
+  short_name = local.tag_value
 }
 
 resource "google_org_policy_policy" "drs_org_policy" {
