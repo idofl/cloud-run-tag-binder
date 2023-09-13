@@ -112,9 +112,8 @@ resource "google_tags_tag_value" "allow_public_access_value" {
 
 resource "google_org_policy_policy" "drs_org_policy" {
   provider = google.with_billing_project
-  name     = "${local.folder_id != "" ?local.folder_id : local.org_id}/policies/iam.allowedPolicyMemberDomains"
-  parent   = (local.folder_id != "" ? local.folder_id : 
-              local.org_id)
+  name     = "${var.cloud_run_root_folder != "" ?local.folder_id : local.org_id}/policies/iam.allowedPolicyMemberDomains"
+  parent   = (var.cloud_run_root_folder != "" ? local.folder_id : local.org_id)
 
   spec {
     inherit_from_parent = true
@@ -152,7 +151,7 @@ resource "google_folder_iam_binding" "tab_binder_folder_root_iam" {
     google_service_account.app_service_account.member,
   ]
 
-  count = "${local.folder_id != "" ? 1 : 0}"
+  count = "${var.cloud_run_root_folder != "" ? 1 : 0}"
 }
 
 resource "google_organization_iam_binding" "tab_binder_org_root_iam" {
@@ -163,7 +162,7 @@ resource "google_organization_iam_binding" "tab_binder_org_root_iam" {
     google_service_account.app_service_account.member,
   ]
 
-  count = "${local.folder_id == "" ? 1 : 0}"
+  count = "${var.cloud_run_root_folder == "" ? 1 : 0}"
 }
 
 resource "google_service_account_iam_binding" "pubsub_act_as_trigger_iam" {
@@ -187,7 +186,7 @@ resource "google_logging_folder_sink" "run_logs_sink_root_folder" {
   destination = local.sink_destination
   filter = local.log_filter
 
-  count = "${local.folder_id != "" ? 1 : 0}"
+  count = "${var.cloud_run_root_folder != "" ? 1 : 0}"
 }
 
 resource "google_logging_organization_sink" "run_logs_sink_root_org" {
@@ -198,14 +197,14 @@ resource "google_logging_organization_sink" "run_logs_sink_root_org" {
   destination = local.sink_destination
   filter = local.log_filter
 
-  count = "${local.folder_id == "" ? 1 : 0}"
+  count = "${var.cloud_run_root_folder == "" ? 1 : 0}"
 }
 
 resource "google_pubsub_topic_iam_binding" "sink_topic_iam" {
   topic = google_pubsub_topic.sink_topic.name
   role = "roles/pubsub.publisher"
   members = [
-    (local.folder_id != "" ? google_logging_folder_sink.run_logs_sink_root_folder[0].writer_identity : 
+    (var.cloud_run_root_folder != "" ? google_logging_folder_sink.run_logs_sink_root_folder[0].writer_identity : 
       google_logging_organization_sink.run_logs_sink_root_org[0].writer_identity)
   ]
 }
