@@ -15,9 +15,11 @@
 
 # The below variables should be set before calling this script
 if [[ -z $PROJECT_ID || -z $REGION || -z $ORG_ID ]]; then
-  echo "Some variables are missing: PROJECT_ID, REGION, ORG_ID, FOLDER_ID (optional)."
+  echo "Please set the following variables before calling the script: PROJECT_ID, REGION, ORG_ID, FOLDER_ID (optional)."
   exit 1
 fi
+
+gcloud config set project $PROJECT_ID
 
 # Build the infrastructure using Terraform
 # (service accounts, IAM, logging sink, Pub/Sub)
