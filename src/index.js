@@ -41,34 +41,37 @@ async function callCreateTagBinding(projectId, location, serviceName) {
       tagValue: tagValue
     }
   };
+
   console.log(`Applying tag '${request.tagBinding.tagValue}' to resource '${request.tagBinding.parent}'`);
 
-  // Create a regional client because the tag binding is for a regional resource
-  // (a Cloud Run service)
-  const resourcemanagerClient = new TagBindingsClient(
+  // Create a regional client because the tag binding is 
+  // for a regional resource (a Cloud Run service)
+  // libName and libVersion are used to internally 
+  // track the usage of this solution by customers
+  const resourceManagerClient = new TagBindingsClient(
   {
     apiEndpoint:`${location}-cloudresourcemanager.googleapis.com`,
     libName: 'cloud-solutions',
-    libVersion: 'cloud-run-tag-public-services-usage-v1.0',
+    libVersion: 'public-cloud-run-with-drs-usage-v1.0',
   });
 
   // Run request
-  const [operation] = await resourcemanagerClient.createTagBinding(request).catch(err => {
+  const operation = await resourceManagerClient.createTagBinding(request).catch(err => {
     debugLog(JSON.stringify(err));
     // For perimssions issues, provide more information via log
     if (err.code && err.code == 7 && err.details && err.details == 'The caller does not have permission') {
-      console.error('Function is not permitted to read tag value or bind the tag to the service. Make sure the service account is permitted to both the tag and the resource');
+      console.error('The service account is not permitted to read the tag value or bind the tag to the Cloud Run service. Make sure the service account is permitted to use the tag value and bind the tag to the Cloud Run service.');
       throw new Error(err.details);
     }
   });
 
-  const [response] = await operation.promise();
+  const response = await operation.promise();
   debugLog(JSON.stringify(response));
 }
 
 function parsePubSubCloudEvent(cloudEvent) {
   // Example structure:
-  // https://googleapis.github.io/google-cloudevents/examples/binary/pubsub/MessagePublishedData-complex.json
+  // https://googleapis.github.io/google-cloudevents/testdata/google/events/cloud/pubsub/v1/MessagePublishedData-text.json
   const data = cloudEvent.data.message.data;
   let message = Buffer.from(data, 'base64').toString().trim();
   message = JSON.parse(message);
@@ -96,11 +99,11 @@ functions.cloudEvent('cloudRunServiceCreatedEvent', async(cloudEvent) => {
 
   // Validate data
   if (!location || !projectId || !serviceName) {
-    console.error('The event does not contain one or more of the following parameters: region, project, or service name');
+    console.error('The event does not contain one or more of the following parameters: project, location, service name');
     throw new Error('Invalid event structure');
   }
 
-  console.log(`Cloud Run service '${serviceName}' created in region '${location}' in project '${projectId}'. Applying tag to service...`);
+  console.log(`Cloud Run service '${serviceName}' created in location '${location}' in project '${projectId}'. Applying tag to service...`);
 
   await callCreateTagBinding(projectId, location, serviceName);
 });
