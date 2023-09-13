@@ -34,13 +34,13 @@ terraform apply -auto-approve \
 
 TAG_VALUE=`terraform output -raw tag_value`
 SINK_TOPIC=`terraform output -raw sink_topic`
-SUBSCRIBER_NAME=`terraform output -raw sink_subscription`
 TRIGGER_SERVICE_ACCOUNT=`terraform output -raw trigger_service_account`
 APP_SERVICE_ACCOUNT=`terraform output -raw app_service_account`
 
 cd ..
 
 RUN_SERVICE_NAME=cloud-run-service-tag-binder
+EVENTARC_TRIGGER_NAME=events-pubsub-trigger
 
 # Host the app on Cloud Run
 # To view debug logs, change DEBUG_LOGS value to "true"
@@ -61,10 +61,11 @@ gcloud run services add-iam-policy-binding $RUN_SERVICE_NAME \
     --member=serviceAccount:$TRIGGER_SERVICE_ACCOUNT \
     --role="roles/run.invoker"
 
-SERVICE_URL=`gcloud run services describe $RUN_SERVICE_NAME --platform managed --region $REGION --project=$PROJECT_ID --format 'value(status.url)'`
-
-# Change the Pub/Sub subscription from pull to push
-gcloud pubsub subscriptions modify-push-config $SUBSCRIBER_NAME \
-    --push-endpoint="$SERVICE_URL/projects/$PROJECT_ID/topics/$SINK_TOPIC" \
-    --push-auth-service-account=$TRIGGER_SERVICE_ACCOUNT \
-    --project=$PROJECT_ID
+gcloud eventarc triggers create $EVENTARC_TRIGGER_NAME \
+    --project=$PROJECT_ID \
+    --location=$REGION \
+    --destination-run-service=$RUN_SERVICE_NAME \
+    --destination-run-region=$REGION \
+    --event-filters="type=google.cloud.pubsub.topic.v1.messagePublished" \
+    --transport-topic=projects/$PROJECT_ID/topics/$SINK_TOPIC \
+    --service-account=$TRIGGER_SERVICE_ACCOUNT

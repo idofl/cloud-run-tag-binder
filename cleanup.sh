@@ -22,14 +22,20 @@
 # Remove the service tagging application
 
 RUN_SERVICE_NAME=cloud-run-service-tag-binder
+EVENTARC_TRIGGER_NAME=events-pubsub-trigger
 
 gcloud run services delete $RUN_SERVICE_NAME \
     --region $REGION \
     --project=$PROJECT_ID \
     --quiet
 
+gcloud eventarc triggers delete $EVENTARC_TRIGGER_NAME \
+  --project=$PROJECT_ID \
+  --location=$REGION \
+
 # Remove all the components created by terraform
 cd terraform
+
 terraform destroy -auto-approve \
   -var="project_id=$PROJECT_ID" \
   -var="region=$REGION" \

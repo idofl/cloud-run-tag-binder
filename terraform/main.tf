@@ -23,7 +23,7 @@ terraform {
   }
 
   provider_meta "google" {
-    module_name = "cloud-solutions/cloud-run-tag-public-services-deploy-v1.0"
+    module_name = "cloud-solutions/public-cloud-run-with-drs-deploy-v1.0"
   }
 }
 
@@ -56,7 +56,7 @@ locals {
   sink_name = "cloud-run-create-service-sink"
   sink_topic = "cloud-run-logs"
   sink_destination = "pubsub.googleapis.com/projects/${var.project_id}/topics/${local.sink_topic}"
-  pubsub_subscription_name = "${local.sink_topic}-subscriber"
+  # pubsub_subscription_name = "${local.sink_topic}-subscriber"
 
   tag_name = "AllowPublicAccess"
   tag_value = "True"
@@ -79,6 +79,7 @@ locals {
     "cloudbuild.googleapis.com",
     "pubsub.googleapis.com",
     "orgpolicy.googleapis.com",
+    "eventarc.googleapis.com",
   ]
 
   log_filter = <<EOT
@@ -221,20 +222,20 @@ resource "google_storage_bucket" "build_bucket" {
   force_destroy = true
 }
 
-resource "google_pubsub_subscription" "example" {
-  name  = local.pubsub_subscription_name
-  topic = local.sink_topic
+# resource "google_pubsub_subscription" "example" {
+#   name  = local.pubsub_subscription_name
+#   topic = local.sink_topic
 
-  ack_deadline_seconds = 600
+#   ack_deadline_seconds = 600
 
-  expiration_policy {
-    ttl = "" # Never expires
-  }
+#   expiration_policy {
+#     ttl = "" # Never expires
+#   }
 
-  lifecycle {
-    ignore_changes = [push_config]
-  }
-}
+#   lifecycle {
+#     ignore_changes = [push_config]
+#   }
+# }
 
 output "tag_value" {
   value = google_tags_tag_value.allow_public_access_value.id
@@ -252,6 +253,6 @@ output "sink_topic" {
   value = local.sink_topic
 }
 
-output "sink_subscription" {
-  value = local.pubsub_subscription_name
-}
+# output "sink_subscription" {
+#   value = local.pubsub_subscription_name
+# }
