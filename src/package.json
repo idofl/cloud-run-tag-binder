@@ -1,7 +1,7 @@
 {
   "name": "cloud-run-tag-binder",
   "version": "1.0.0",
-  "description": "Cloud Function function to apply tag value to new Cloud Run services",
+  "description": "Application to apply a tag value to new Cloud Run services",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
