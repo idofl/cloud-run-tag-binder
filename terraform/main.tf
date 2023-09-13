@@ -45,10 +45,6 @@ provider "google" {
 data "google_project" "project" {
 }
 
-data "google_organization" "org" {
-  organization = var.organization_id
-}
-
 locals {
   app_service_account_name = "cloud-run-tag-binder"
   trigger_service_account_name = "cloud-run-notifier"
@@ -56,7 +52,6 @@ locals {
   sink_name = "cloud-run-create-service-sink"
   sink_topic = "cloud-run-logs"
   sink_destination = "pubsub.googleapis.com/projects/${var.project_id}/topics/${local.sink_topic}"
-  # pubsub_subscription_name = "${local.sink_topic}-subscriber"
 
   tag_name = "AllowPublicAccess"
   tag_value = "True"
@@ -64,7 +59,7 @@ locals {
   tag_role_name = "runTagBinder"
   cloud_build_bucket = "${var.project_id}_cloudbuild"
 
-  org_id = "organizations/${data.google_organization.org.org_id}"
+  org_id = "organizations/${var.organization_id}"
   folder_id = "folders/${var.cloud_run_root_folder}"
   project_number = data.google_project.project.number
 
@@ -222,21 +217,6 @@ resource "google_storage_bucket" "build_bucket" {
   force_destroy = true
 }
 
-# resource "google_pubsub_subscription" "example" {
-#   name  = local.pubsub_subscription_name
-#   topic = local.sink_topic
-
-#   ack_deadline_seconds = 600
-
-#   expiration_policy {
-#     ttl = "" # Never expires
-#   }
-
-#   lifecycle {
-#     ignore_changes = [push_config]
-#   }
-# }
-
 output "tag_value" {
   value = google_tags_tag_value.allow_public_access_value.id
 }
@@ -252,7 +232,3 @@ output "trigger_service_account" {
 output "sink_topic" {
   value = local.sink_topic
 }
-
-# output "sink_subscription" {
-#   value = local.pubsub_subscription_name
-# }
