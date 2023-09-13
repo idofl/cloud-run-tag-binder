@@ -14,10 +14,10 @@
 # limitations under the License.
 
 # The below variables should be set before calling this script
-#PROJECT_ID=[APP_PROJECT_ID]
-#REGION=[APP_REGION]
-#ORG_ID=[ORGANIZATION_ID]
-#FOLDER_ID=[ROOT_FOLDER_ID]
+if [[ -z $PROJECT_ID || -z $REGION || -z $ORG_ID ]]; then
+  echo "Some variables are missing: PROJECT_ID, REGION, ORG_ID, FOLDER_ID (optional)."
+  exit 1
+fi
 
 # Build the infrastructure using Terraform
 # (service accounts, IAM, logging sink, Pub/Sub)
