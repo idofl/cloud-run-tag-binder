@@ -88,7 +88,7 @@ locals {
       inheritFromParent: true
   EOT
 
-  imported_org_policy = fileexists("../originOrgPolicy.yaml") ? file("../originOrgPolicy.yaml") : local.default_org_policy
+  imported_org_policy = yamldecode(fileexists("../originOrgPolicy.yaml") ? file("../originOrgPolicy.yaml") : local.default_org_policy)
 }
 
 resource "google_project_service" "services" {
@@ -124,15 +124,15 @@ resource "google_org_policy_policy" "drs_org_policy" {
 
   # Import existing org policy and append the tag exclusion
   spec {
-    inherit_from_parent = try(yamldecode(local.imported_org_policy).spec.inheritFromParent, true)
+    inherit_from_parent = try(local.imported_org_policy.spec.inheritFromParent, true)
     dynamic "rules" {
-      for_each = try(yamldecode(local.imported_org_policy).spec.rules, [])
+      for_each = try(local.imported_org_policy.spec.rules, [])
       iterator = rules_iterator
       content {
         allow_all = try(rules_iterator.value["allowAll"], null)
         deny_all = try(rules_iterator.value["denyAll"], null)
         dynamic "condition" {
-          for_each = rules_iterator.value["condition"] != null ? [""] : []
+          for_each = try(rules_iterator.value["condition"], null) != null ? [""] : []
           content {
             title = try(rules_iterator.value["condition"].title,null)
             expression = try(rules_iterator.value["condition"].expression, null)
@@ -141,7 +141,7 @@ resource "google_org_policy_policy" "drs_org_policy" {
           }
         }
         dynamic "values" {
-          for_each = rules_iterator.value["values"] != null ? [""] : []
+          for_each = try(rules_iterator.value["values"], null) != null ? [""] : []
           content {
             allowed_values = try(rules_iterator.value["values"].allowedValues, null)
             denied_values =  try(rules_iterator.value["values"].deniedValues, null)
