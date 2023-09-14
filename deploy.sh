@@ -31,7 +31,7 @@ fi
 
 # Backup the org policy at either the org or folder level
 policyFound=`gcloud org-policies list --filter="iam.allowedPolicyMemberDomains" --$parameter_name=$parameter_value`
-if [[ policyFound ]]; then
+if [[ $policyFound ]]; then
   gcloud org-policies describe iam.allowedPolicyMemberDomains \
     --$parameter_name=$parameter_value > originOrgPolicy.yaml
 fi
@@ -45,7 +45,7 @@ terraform init
 
 # Import existing org policy to Terraform's state
 # To enable Terraform to calculate the diff
-if [[ policyFound ]]; then
+if [[ $policyFound ]]; then
   terraform import \
     -var="project_id=$PROJECT_ID" \
     -var="region=$REGION" \
