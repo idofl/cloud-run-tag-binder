@@ -1,5 +1,6 @@
 src/node_modules
 .DS_Store
 *.json
+*.yaml
 .terraform*
 terraform.tfstate*
