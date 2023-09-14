@@ -21,12 +21,38 @@ fi
 
 gcloud config set project $PROJECT_ID
 
+if [[ -z $FOLDER_ID ]]; then
+  parameter_name="organization"
+  parameter_value=$ORG_ID
+else
+  parameter_name="folder"
+  parameter_value=$FOLDER_ID
+fi
+
+# Backup the org policy at either the org or folder level
+policyFound=`gcloud org-policies list --filter="iam.allowedPolicyMemberDomains" --$parameter_name=$parameter_value`
+if [[ policyFound ]]; then
+  gcloud org-policies describe iam.allowedPolicyMemberDomains \
+    --$parameter_name=$parameter_value > originOrgPolicy.yaml
+fi
+
 # Build the infrastructure using Terraform
 # (service accounts, IAM, logging sink, Pub/Sub)
 
 cd terraform
 
 terraform init
+
+# Import existing org policy to Terraform's state
+# To enable Terraform to calculate the diff
+if [[ policyFound ]]; then
+  terraform import \
+    -var="project_id=$PROJECT_ID" \
+    -var="region=$REGION" \
+    -var="cloud_run_root_folder=$FOLDER_ID" \
+    -var="organization_id=$ORG_ID" \
+    google_org_policy_policy.drs_org_policy "${parameter_name}s/$parameter_value/policies/iam.allowedPolicyMemberDomains"
+fi
 
 terraform apply -auto-approve \
   -var="project_id=$PROJECT_ID" \

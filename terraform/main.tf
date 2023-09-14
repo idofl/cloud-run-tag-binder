@@ -82,6 +82,13 @@ locals {
   protoPayload.methodName="google.cloud.run.v1.Services.CreateService" AND
   resource.type="cloud_run_revision"
   EOT
+
+  default_org_policy = <<EOT
+    spec:
+      inheritFromParent: true
+  EOT
+
+  imported_org_policy = fileexists("../originOrgPolicy.yaml") ? file("../originOrgPolicy.yaml") : local.default_org_policy
 }
 
 resource "google_project_service" "services" {
@@ -115,8 +122,33 @@ resource "google_org_policy_policy" "drs_org_policy" {
   name     = "${var.cloud_run_root_folder != "" ?local.folder_id : local.org_id}/policies/iam.allowedPolicyMemberDomains"
   parent   = (var.cloud_run_root_folder != "" ? local.folder_id : local.org_id)
 
+  # Import existing org policy and append the tag exclusion
   spec {
-    inherit_from_parent = true
+    inherit_from_parent = try(yamldecode(local.imported_org_policy).spec.inheritFromParent, true)
+    dynamic "rules" {
+      for_each = try(yamldecode(local.imported_org_policy).spec.rules, [])
+      iterator = rules_iterator
+      content {
+        allow_all = try(rules_iterator.value["allowAll"], null)
+        deny_all = try(rules_iterator.value["denyAll"], null)
+        dynamic "condition" {
+          for_each = rules_iterator.value["condition"] != null ? [""] : []
+          content {
+            title = try(rules_iterator.value["condition"].title,null)
+            expression = try(rules_iterator.value["condition"].expression, null)
+            location = try(rules_iterator.value["condition"].location, null)
+            description = try(rules_iterator.value["condition"].description, null)
+          }
+        }
+        dynamic "values" {
+          for_each = rules_iterator.value["values"] != null ? [""] : []
+          content {
+            allowed_values = try(rules_iterator.value["values"].allowedValues, null)
+            denied_values =  try(rules_iterator.value["values"].deniedValues, null)
+          }
+        }
+      }
+    }
     rules {
       allow_all = "TRUE"
       condition {

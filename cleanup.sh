@@ -44,3 +44,8 @@ terraform destroy -auto-approve \
 
 cd ..
 
+# Restore the backed policy
+if [ -f "originOrgPolicy.yaml" ]; then
+  gcloud org-policies set-policy originOrgPolicy.yaml
+  mv originOrgPolicy.yaml originOrgPolicy-backup.yaml
+fi
