@@ -124,7 +124,7 @@ resource "google_org_policy_policy" "drs_org_policy" {
 
   # Import existing org policy and append the tag exclusion
   spec {
-    inherit_from_parent = try(local.imported_org_policy.spec.inheritFromParent, true)
+    inherit_from_parent = try(local.imported_org_policy.spec.inheritFromParent, false)
     dynamic "rules" {
       for_each = try(local.imported_org_policy.spec.rules, [])
       iterator = rules_iterator
